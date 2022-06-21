@@ -23,7 +23,7 @@ const str = escapeRegExp('te*s?t');
 const str = xmlEscape('<p>');
 
 // "<p>"
-const str = xmlEscape(new SafeString('<p>'))
+const str = xmlEscape(new SafeString('<p>'));
 ```
 
 ## Installation
