@@ -14,7 +14,7 @@
 Just a bunch of utility functions shared by [mojo.js](https://mojojs.org) packages.
 
 ```js
-import {SafeString, escapeRegExp, xmlEscape} from '@mojojs/util';
+import {SafeString, escapeRegExp, xmlEscape, xmlUnescape} from '@mojojs/util';
 
 // "te\*s\?t"
 const str = escapeRegExp('te*s?t');
@@ -24,6 +24,9 @@ const str = xmlEscape('<p>');
 
 // "<p>"
 const str = xmlEscape(new SafeString('<p>'));
+
+// "<p>"
+const str = xmlUnescape('&lt;p&gt;&apos;');
 ```
 
 ## Installation
