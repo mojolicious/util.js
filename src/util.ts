@@ -1,3 +1,14 @@
+interface URLParts {
+  authority: string;
+  fragment: string;
+  path: string;
+  query: string;
+  scheme: string;
+}
+
+// RFC 3986
+const URL_RE = /^(([^:/?#]+):)?(\/\/([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?/;
+
 const XML_ESCAPE: Record<string, string> = {
   '&': '&amp;',
   '<': '&lt;',
@@ -49,6 +60,22 @@ export function stickyMatch(
   const match = stickyRegex.exec(stringWithOffset.value);
   if (match !== null) stringWithOffset.offset = stickyRegex.lastIndex;
   return match;
+}
+
+/**
+ * Split URL with the official regular expression.
+ */
+export function urlSplit(url: string): URLParts | null {
+  const match = url.match(URL_RE);
+  if (match === null) return null;
+
+  return {
+    scheme: match[2] ?? '',
+    authority: match[4] ?? '',
+    path: match[5] ?? '',
+    query: match[7] ?? '',
+    fragment: match[9] ?? ''
+  };
 }
 
 /**

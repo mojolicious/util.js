@@ -1,4 +1,4 @@
-import {cssUnescape, escapeRegExp, SafeString, stickyMatch, xmlEscape, xmlUnescape} from '../lib/util.js';
+import {cssUnescape, escapeRegExp, SafeString, stickyMatch, urlSplit, xmlEscape, xmlUnescape} from '../lib/util.js';
 import t from 'tap';
 
 t.test('Util', t => {
@@ -23,6 +23,37 @@ t.test('Util', t => {
       results.push(match[1]);
     }
     t.same(results, ['test1', 'test2', 'test3', 'test4']);
+    t.end();
+  });
+
+  t.test('urlSplit', t => {
+    t.same(urlSplit(''), {authority: '', fragment: '', path: '', query: '', scheme: ''});
+
+    t.same(urlSplit('http://foo:bar@example.com:3000/test/index.html?foo=bar#test'), {
+      authority: 'foo:bar@example.com:3000',
+      fragment: 'test',
+      path: '/test/index.html',
+      query: 'foo=bar',
+      scheme: 'http'
+    });
+    t.same(urlSplit('http://☃.net./♥'), {authority: '☃.net.', fragment: '', path: '/♥', query: '', scheme: 'http'});
+    t.same(urlSplit('//example.com'), {authority: 'example.com', fragment: '', path: '', query: '', scheme: ''});
+    t.same(urlSplit('../index.html'), {authority: '', fragment: '', path: '../index.html', query: '', scheme: ''});
+    t.same(urlSplit('http://bücher.ch:3000/foo'), {
+      authority: 'bücher.ch:3000',
+      fragment: '',
+      path: '/foo',
+      query: '',
+      scheme: 'http'
+    });
+    t.same(urlSplit('data:image/png;base64,helloworld123'), {
+      authority: '',
+      fragment: '',
+      path: 'image/png;base64,helloworld123',
+      query: '',
+      scheme: 'data'
+    });
+
     t.end();
   });
 
