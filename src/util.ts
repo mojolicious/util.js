@@ -32,6 +32,16 @@ const XML_UNESCAPE: Record<string, string> = {
 export class SafeString extends String {}
 
 /**
+ * AbortController exception class.
+ */
+export class AbortError extends Error {
+  constructor(message = 'Aborted') {
+    super(message);
+    this.name = 'AbortError';
+  }
+}
+
+/**
  * CSS unescape string.
  */
 export function cssUnescape(value: string): string {

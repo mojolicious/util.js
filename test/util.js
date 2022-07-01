@@ -1,4 +1,13 @@
-import {cssUnescape, escapeRegExp, SafeString, stickyMatch, urlSplit, xmlEscape, xmlUnescape} from '../lib/util.js';
+import {
+  AbortError,
+  cssUnescape,
+  escapeRegExp,
+  SafeString,
+  stickyMatch,
+  urlSplit,
+  xmlEscape,
+  xmlUnescape
+} from '../lib/util.js';
 import t from 'tap';
 
 t.test('Util', t => {
@@ -73,6 +82,18 @@ t.test('Util', t => {
     t.same(xmlUnescape('привет&lt;foo&gt;'), 'привет<foo>');
     t.same(xmlUnescape('la&lt;f&gt;\nbar&quot;baz&quot;&#39;yada\n&#39;&amp;lt;la'), 'la<f>\nbar"baz"\'yada\n\'&lt;la');
     t.same(xmlUnescape('&lt;p&gt;&apos;'), "<p>'");
+    t.end();
+  });
+
+  t.test('AbortError', t => {
+    let result;
+    try {
+      throw new AbortError();
+    } catch (error) {
+      result = error;
+    }
+    t.equal(result.name, 'AbortError');
+    t.equal(result.message, 'Aborted');
     t.end();
   });
 

@@ -1,6 +1,12 @@
 
 # Changelog
 
+## v1.2.0 (2022-07-02)
+
+### Features
+
+  * Added `AbortError` class.
+
 ## v1.1.0 (2022-06-26)
 
 ### Features
