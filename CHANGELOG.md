@@ -1,6 +1,12 @@
 
 # Changelog
 
+## v1.3.0 (2022-07-03)
+
+### Features
+
+  * Added `captureOutput`, `decodeURIComponentSafe`, `jsonPointer`, `tablify` and `termEscape` functions.
+
 ## v1.2.0 (2022-07-02)
 
 ### Features

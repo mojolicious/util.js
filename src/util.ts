@@ -1,3 +1,9 @@
+import stream from 'stream';
+
+// Plain JSON
+export type JSONValue = string | number | boolean | null | JSONValue[] | {[key: string]: JSONValue};
+export type JSONObject = {[key: string]: JSONValue};
+
 interface URLParts {
   authority: string;
   fragment: string;
@@ -42,6 +48,37 @@ export class AbortError extends Error {
 }
 
 /**
+ * Capture STDOUT/STDERR output.
+ */
+export async function captureOutput(
+  fn: () => Promise<void> | void,
+  options: {stderr?: boolean; stdout?: boolean} = {}
+): Promise<string | Buffer> {
+  if (options.stdout === undefined) options.stdout = true;
+
+  const stream = new CaptureStream();
+  const stdoutWrite = process.stdout.write;
+  const stderrWrite = process.stderr.write;
+
+  if (options.stdout === true) {
+    process.stdout.write = stdoutWrite.bind(stream);
+  }
+  if (options.stderr === true) {
+    process.stderr.write = stderrWrite.bind(stream);
+  }
+
+  try {
+    await fn();
+  } finally {
+    process.stdout.write = stdoutWrite;
+    process.stderr.write = stderrWrite;
+  }
+
+  const output = stream.output;
+  return output.length > 0 && Buffer.isBuffer(output[0]) ? Buffer.concat(output) : output.join('');
+}
+
+/**
  * CSS unescape string.
  */
 export function cssUnescape(value: string): string {
@@ -53,10 +90,43 @@ function cssUnescapeReplace(value: string): string {
 }
 
 /**
+ * Decode URI component, but do not throw an exception if it fails.
+ */
+export function decodeURIComponentSafe(value: string): string | null {
+  try {
+    return decodeURIComponent(value);
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
  * Escape string for use in a regular expression.
  */
 export function escapeRegExp(string: string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * JSON pointers.
+ */
+export function jsonPointer(value: JSONValue, pointer: string): JSONValue | undefined {
+  if (pointer.startsWith('/') === false) return pointer.length > 0 ? null : value;
+
+  let data: any = value;
+  for (const part of pointer.replace(/^\//, '').split('/')) {
+    const unescaped = part.replaceAll('~1', '/').replaceAll('~0', '~');
+
+    if (typeof data === 'object' && data !== null && data[unescaped] !== undefined) {
+      data = data[unescaped];
+    } else if (Array.isArray(data) && /^\d+$/.test(unescaped) === true) {
+      data = data[parseInt(unescaped)];
+    } else {
+      return undefined;
+    }
+  }
+
+  return data;
 }
 
 /**
@@ -70,6 +140,36 @@ export function stickyMatch(
   const match = stickyRegex.exec(stringWithOffset.value);
   if (match !== null) stringWithOffset.offset = stickyRegex.lastIndex;
   return match;
+}
+
+/**
+ * Tablify data structure.
+ */
+export function tablify(rows: string[][] = []): string {
+  const spec: number[] = [];
+
+  const table = rows.map(row => {
+    return row.map((col, i) => {
+      col = `${col ?? ''}`.replace(/[\r\n]/g, '');
+      if (col.length >= (spec[i] ?? 0)) spec[i] = col.length;
+      return col;
+    });
+  });
+
+  const lines = table.map(row => row.map((col, i) => (i === row.length - 1 ? col : col.padEnd(spec[i]))).join('  '));
+  return lines.join('\n') + '\n';
+}
+
+/**
+ * Escape all POSIX control characters except for `\n`.
+ */
+export function termEscape(value: string): string {
+  return [...value]
+    .map(char =>
+      // eslint-disable-next-line no-control-regex
+      /^[\x00-\x09\x0b-\x1f\x7f\x80-\x9f]$/.test(char) ? '\\x' + char.charCodeAt(0).toString(16).padStart(2, '0') : char
+    )
+    .join('');
 }
 
 /**
@@ -109,4 +209,13 @@ export function xmlUnescape(value: string): string {
 
 function xmlUnescapeReplace(value: string, entity: string): string {
   return XML_UNESCAPE[entity];
+}
+
+class CaptureStream extends stream.Writable {
+  output: Uint8Array[] = [];
+
+  _write(chunk: Uint8Array, enc: string, next: () => void) {
+    this.output.push(chunk);
+    next();
+  }
 }

@@ -1,16 +1,48 @@
 import {
   AbortError,
+  captureOutput,
   cssUnescape,
+  decodeURIComponentSafe,
   escapeRegExp,
+  jsonPointer,
   SafeString,
   stickyMatch,
+  tablify,
+  termEscape,
   urlSplit,
   xmlEscape,
   xmlUnescape
 } from '../lib/util.js';
 import t from 'tap';
 
-t.test('Util', t => {
+t.test('Util', async t => {
+  await t.test('captureOutput', async t => {
+    const output = await captureOutput(async () => {
+      console.log('test works');
+    });
+    t.match(output, /test works/);
+
+    let output2, error;
+    try {
+      output2 = await captureOutput(async () => {
+        throw new Error('Capture error');
+      });
+    } catch (err) {
+      error = err;
+    }
+    t.same(output2, undefined);
+    t.match(error, /Capture error/);
+
+    const output3 = await captureOutput(
+      async () => {
+        process.stdout.write('works');
+        process.stderr.write('too');
+      },
+      {stderr: true}
+    );
+    t.match(output3, /workstoo/);
+  });
+
   t.test('cssUnescape', t => {
     t.equal(cssUnescape('#\\n\\002603x'), '#☃x');
     t.end();
@@ -19,6 +51,54 @@ t.test('Util', t => {
   t.test('escapeRegExp', t => {
     t.equal(escapeRegExp('te*s?t'), 'te\\*s\\?t');
     t.equal(escapeRegExp('\\^$.*+?()[]{}|'), '\\\\\\^\\$\\.\\*\\+\\?\\(\\)\\[\\]\\{\\}\\|');
+    t.end();
+  });
+
+  t.test('decodeURIComponentSafe', t => {
+    const decode = decodeURIComponentSafe;
+    t.same(decode('%E0%A4%A'), null);
+    t.same(decode('te%2fst'), 'te/st');
+    t.same(decode('te%2Fst'), 'te/st');
+    t.end();
+  });
+
+  t.test('jsonPointer (RFC 6901)', t => {
+    t.equal(jsonPointer({hello: 'world'}, '/hello'), 'world', 'right result');
+    t.same(jsonPointer({hello: 'world'}, '/bye'), undefined, 'no result');
+    t.same(jsonPointer({hello: 'world'}, '/'), undefined, 'no result');
+    t.same(jsonPointer({hello: 'world'}, '/0'), undefined, 'no result');
+    t.same(jsonPointer({hello: null}, '/hello'), null, 'right result');
+
+    t.same(jsonPointer([], '/0'), undefined, 'no result');
+    t.same(jsonPointer(['test', 123], '/0'), 'test', 'right result');
+    t.same(jsonPointer(['test', 123], '/1'), 123, 'right result');
+    t.same(jsonPointer('test', ''), 'test', 'right result');
+    t.same(jsonPointer('', '/0'), undefined, 'no result');
+    t.same(jsonPointer('test', '0'), undefined, 'no result');
+
+    const value = {
+      foo: ['bar', 'baz'],
+      '': 0,
+      'a/b': 1,
+      'c%d': 2,
+      'e^f': 3,
+      'g|h': 4,
+      'i\\j': 5,
+      'k"l': 6,
+      ' ': 7,
+      'm~n': 8
+    };
+    t.same(jsonPointer(value, ''), value, 'empty pointer is whole document');
+    t.same(jsonPointer(value, '/foo'), ['bar', 'baz'], '"/foo" is "["bar", "baz"]"');
+    t.same(jsonPointer(value, '/'), 0, '"/" is 0');
+    t.same(jsonPointer(value, '/a~1b'), 1, '"/a~1b" is 1');
+    t.same(jsonPointer(value, '/c%d'), 2, '"/c%d" is 2');
+    t.same(jsonPointer(value, '/e^f'), 3, '"/e^f" is 3');
+    t.same(jsonPointer(value, '/g|h'), 4, '"/g|h" is 4');
+    t.same(jsonPointer(value, '/i\\j'), 5, '"/i\\j" is 5');
+    t.same(jsonPointer(value, '/k"l'), 6, '"/k"l" is 6');
+    t.same(jsonPointer(value, '/ '), 7, '"/ " is 7');
+    t.same(jsonPointer(value, '/m~0n'), 8, '"/m~0n" is 8');
     t.end();
   });
 
@@ -32,6 +112,53 @@ t.test('Util', t => {
       results.push(match[1]);
     }
     t.same(results, ['test1', 'test2', 'test3', 'test4']);
+    t.end();
+  });
+
+  t.test('tablify', t => {
+    t.equal(typeof tablify, 'function');
+    t.equal(tablify([['foo']]), 'foo\n');
+    t.equal(tablify([['f\r\no o\r\n', 'bar']]), 'fo o  bar\n');
+    t.equal(tablify([['  foo', '  b a r']]), '  foo    b a r\n');
+    t.equal(
+      tablify([
+        ['foo', 'yada'],
+        ['yada', 'yada']
+      ]),
+      'foo   yada\nyada  yada\n'
+    );
+    t.equal(
+      tablify([
+        [undefined, 'yada'],
+        ['yada', null]
+      ]),
+      '      yada\nyada  \n'
+    );
+    t.equal(
+      tablify([
+        ['foo', 'bar', 'baz'],
+        ['yada', 'yada', 'yada']
+      ]),
+      'foo   bar   baz\nyada  yada  yada\n'
+    );
+    t.equal(
+      tablify([
+        ['a', '', 0],
+        [0, '', 'b']
+      ]),
+      'a    0\n0    b\n'
+    );
+    t.equal(tablify([[1, 2], [3]]), '1  2\n3\n');
+    t.equal(tablify([[1], [2, 3]]), '1\n2  3\n');
+    t.equal(tablify([[1], [], [2, 3]]), '1\n\n2  3\n');
+    t.end();
+  });
+
+  t.test('termEscape', t => {
+    t.equal(typeof termEscape, 'function');
+    t.equal(termEscape('Accept: */*\x0d\x0a'), 'Accept: */*\\x0d\x0a');
+    t.equal(termEscape('\t\b\r\n\f'), '\\x09\\x08\\x0d\n\\x0c');
+    t.equal(termEscape('\x00\x09\x0b\x1f\x7f\x80\x9f'), '\\x00\\x09\\x0b\\x1f\\x7f\\x80\\x9f');
     t.end();
   });
 
