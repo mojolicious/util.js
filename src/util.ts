@@ -1,4 +1,4 @@
-import stream from 'stream';
+import stream from 'node:stream';
 
 // Plain JSON
 export type JSONValue = string | number | boolean | null | JSONValue[] | {[key: string]: JSONValue};
