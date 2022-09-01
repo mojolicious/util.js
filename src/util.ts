@@ -1,5 +1,3 @@
-import stream from 'node:stream';
-
 // Plain JSON
 export type JSONValue = string | number | boolean | null | JSONValue[] | {[key: string]: JSONValue};
 export type JSONObject = {[key: string]: JSONValue};
@@ -56,25 +54,32 @@ export async function captureOutput(
 ): Promise<string | Buffer> {
   if (options.stdout === undefined) options.stdout = true;
 
-  const stream = new CaptureStream();
-  const stdoutWrite = process.stdout.write;
-  const stderrWrite = process.stderr.write;
+  const output: Uint8Array[] = [];
+  const stdout = process.stdout;
+  const stderr = process.stderr;
+  const stdoutWrite = stdout.write;
+  const stderrWrite = stderr.write;
 
   if (options.stdout === true) {
-    process.stdout.write = stdoutWrite.bind(stream);
+    stdout.write = (buffer: Uint8Array): boolean => {
+      output.push(buffer);
+      return true;
+    };
   }
   if (options.stderr === true) {
-    process.stderr.write = stderrWrite.bind(stream);
+    stderr.write = (buffer: Uint8Array) => {
+      output.push(buffer);
+      return true;
+    };
   }
 
   try {
     await fn();
   } finally {
-    process.stdout.write = stdoutWrite;
-    process.stderr.write = stderrWrite;
+    stdout.write = stdoutWrite;
+    stderr.write = stderrWrite;
   }
 
-  const output = stream.output;
   return output.length > 0 && Buffer.isBuffer(output[0]) ? Buffer.concat(output) : output.join('');
 }
 
@@ -209,13 +214,4 @@ export function xmlUnescape(value: string): string {
 
 function xmlUnescapeReplace(value: string, entity: string): string {
   return XML_UNESCAPE[entity];
-}
-
-class CaptureStream extends stream.Writable {
-  output: Uint8Array[] = [];
-
-  _write(chunk: Uint8Array, enc: string, next: () => void) {
-    this.output.push(chunk);
-    next();
-  }
 }
