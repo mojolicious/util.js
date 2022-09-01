@@ -51,24 +51,24 @@ export class AbortError extends Error {
 export async function captureOutput(
   fn: () => Promise<void> | void,
   options: {stderr?: boolean; stdout?: boolean} = {}
-): Promise<string | Buffer> {
+): Promise<Buffer> {
   if (options.stdout === undefined) options.stdout = true;
 
-  const output: Uint8Array[] = [];
+  const output: any[] = [];
   const stdout = process.stdout;
   const stderr = process.stderr;
   const stdoutWrite = stdout.write;
   const stderrWrite = stderr.write;
 
   if (options.stdout === true) {
-    stdout.write = (buffer: Uint8Array): boolean => {
-      output.push(buffer);
+    stdout.write = (buffer: any) => {
+      output.push(Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer));
       return true;
     };
   }
   if (options.stderr === true) {
-    stderr.write = (buffer: Uint8Array) => {
-      output.push(buffer);
+    stderr.write = (buffer: any) => {
+      output.push(Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer));
       return true;
     };
   }
@@ -80,7 +80,7 @@ export async function captureOutput(
     stderr.write = stderrWrite;
   }
 
-  return output.length > 0 && Buffer.isBuffer(output[0]) ? Buffer.concat(output) : output.join('');
+  return Buffer.concat(output);
 }
 
 /**
