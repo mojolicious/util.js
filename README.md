@@ -11,7 +11,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/mojolicious/util.js/badge.svg?branch=main)](https://coveralls.io/github/mojolicious/util.js?branch=main)
 [![npm](https://img.shields.io/npm/v/@mojojs/util.svg)](https://www.npmjs.com/package/@mojojs/util)
 
-Just a bunch of utility functions shared by [mojo.js](https://mojojs.org) packages.
+Just a bunch of utility functions and classes shared by [mojo.js](https://mojojs.org) packages.
 
 ```js
 import {SafeString, escapeRegExp, xmlEscape, xmlUnescape} from '@mojojs/util';
