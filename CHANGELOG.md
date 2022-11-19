@@ -3,6 +3,12 @@
 
 This package strictly follows [Semantic Versioning](https://semver.org).
 
+## v1.5.0 (2022-11-20)
+
+### Features
+
+  * Added `AsyncHooks` class.
+
 ## v1.4.0 (2022-09-01)
 
 ### Features
