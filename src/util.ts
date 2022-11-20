@@ -62,6 +62,18 @@ export class AsyncHooks {
   }
 
   /**
+   * Remove one or more hook handlers.
+   */
+  removeHook(name: string, fn?: Hook): void {
+    const hooks = this._hooks;
+    if (fn === undefined) {
+      delete hooks[name];
+    } else if (hooks[name] !== undefined) {
+      hooks[name] = hooks[name].filter(hook => hook !== fn);
+    }
+  }
+
+  /**
    * Run hook.
    */
   async runHook(name: string, ...args: any[]): Promise<any> {

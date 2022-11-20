@@ -3,6 +3,12 @@
 
 This package strictly follows [Semantic Versioning](https://semver.org).
 
+## v1.6.0 (2022-11-21)
+
+### Features
+
+  * Added `removeHook` method to `AsyncHooks` class.
+
 ## v1.5.0 (2022-11-20)
 
 ### Features

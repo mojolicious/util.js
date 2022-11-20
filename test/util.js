@@ -360,6 +360,36 @@ t.test('Util', async t => {
       t.equal(fail.message, 'Test');
       t.same(results, ['test1', 1, 2]);
     });
+
+    await t.test('Remove hooks', async t => {
+      const hooks = new AsyncHooks();
+      const results = [];
+
+      const fn1 = async () => {
+        results.push(1);
+      };
+      const fn2 = async () => {
+        results.push(2);
+      };
+      const fn3 = async () => {
+        results.push(3);
+      };
+
+      hooks.addHook('foo', fn1);
+      hooks.addHook('foo', fn2);
+      hooks.addHook('foo', fn3);
+
+      await hooks.runHook('foo');
+      t.same(results, [1, 2, 3]);
+
+      hooks.removeHook('foo', fn2);
+      await hooks.runHook('foo');
+      t.same(results, [1, 2, 3, 1, 3]);
+
+      hooks.removeHook('foo');
+      await hooks.runHook('foo');
+      t.same(results, [1, 2, 3, 1, 3]);
+    });
   });
 
   t.test('AbortError', t => {
