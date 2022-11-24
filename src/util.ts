@@ -32,6 +32,10 @@ const XML_UNESCAPE: Record<string, string> = {
   '#39': "'"
 };
 
+const NAME_RE = new RegExp('[;\\s]*([^=;, ]+)\\s*', 'ys');
+const QUOTED_RE = new RegExp('=\\s*("(?:\\\\\\\\|\\\\"|[^"])*")', 'ys');
+const UNQUOTED_RE = new RegExp('=\\s*([^;, ]*)', 'ys');
+
 /**
  * Safe string that should not be escaped.
  */
@@ -159,6 +163,46 @@ export function decodeURIComponentSafe(value: string): string | null {
  */
 export function escapeRegExp(string: string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Extract HTTP header field parameters until the first comma.
+ */
+export function headerParams(value: string): {params: Record<string, string>; remainder: string} {
+  const params: Record<string, string> = {};
+
+  const sticky = {offset: 0, value};
+  while (value.length > sticky.offset) {
+    const nameMatch = stickyMatch(sticky, NAME_RE);
+    if (nameMatch === null) break;
+    const name = nameMatch[1];
+
+    const quotedMatch = stickyMatch(sticky, QUOTED_RE);
+    if (quotedMatch !== null) {
+      params[name] ??= headerUnquote(quotedMatch[1]);
+      continue;
+    }
+
+    const unquotedMatch = stickyMatch(sticky, UNQUOTED_RE);
+    if (unquotedMatch !== null) params[name] ??= unquotedMatch[1];
+  }
+
+  return {params, remainder: value.slice(sticky.offset)};
+}
+
+/**
+ * Quote HTTP header field parameter.
+ */
+export function headerQuote(value: string): string {
+  return '"' + value.replaceAll('\\', '\\\\').replaceAll('"', '\\"') + '"';
+}
+
+/**
+ * Unquote HTTP header field parameter.
+ */
+export function headerUnquote(value: string): string {
+  if (value.startsWith('"') !== true || value.endsWith('"') !== true) return value;
+  return value.slice(1, -1).replaceAll('\\\\', '\\').replaceAll('\\"', '"');
 }
 
 /**

@@ -6,6 +6,9 @@ import {
   cssUnescape,
   decodeURIComponentSafe,
   escapeRegExp,
+  headerParams,
+  headerQuote,
+  headerUnquote,
   jsonPointer,
   SafeString,
   stickyMatch,
@@ -53,6 +56,31 @@ t.test('Util', async t => {
   t.test('escapeRegExp', t => {
     t.equal(escapeRegExp('te*s?t'), 'te\\*s\\?t');
     t.equal(escapeRegExp('\\^$.*+?()[]{}|'), '\\\\\\^\\$\\.\\*\\+\\?\\(\\)\\[\\]\\{\\}\\|');
+    t.end();
+  });
+
+  t.test('headerQuote', t => {
+    t.equal(headerQuote('foo; 23 "bar'), '"foo; 23 \\"bar"');
+    t.equal(headerQuote('"foo; 23 "bar"'), '"\\"foo; 23 \\"bar\\""');
+    t.end();
+  });
+
+  t.test('headerUnquote', t => {
+    t.equal(headerUnquote('foo"bar"'), 'foo"bar"');
+    t.equal(headerUnquote('"foo 23 \\"bar"'), 'foo 23 "bar');
+    t.equal(headerUnquote('"\\"foo 23 \\"bar\\""'), '"foo 23 "bar"');
+    t.end();
+  });
+
+  t.test('headerParams', t => {
+    t.same(headerParams(''), {params: {}, remainder: ''});
+    t.same(headerParams('foo=b=a=r'), {params: {foo: 'b=a=r'}, remainder: ''});
+    t.same(headerParams('a=b; c, d=e'), {params: {a: 'b'}, remainder: ', d=e'});
+    t.same(headerParams('a=b; a=c'), {params: {a: 'b'}, remainder: ''});
+    t.same(headerParams('a=b; a="c"'), {params: {a: 'b'}, remainder: ''});
+    t.same(headerParams('a=b; b="c=d"'), {params: {a: 'b', b: 'c=d'}, remainder: ''});
+    t.same(headerParams('a=b, c=d'), {params: {a: 'b'}, remainder: ', c=d'});
+    t.same(headerParams(`rel="x"; t*=UTF-8'de'a%20b`), {params: {rel: 'x', 't*': "UTF-8'de'a%20b"}, remainder: ''});
     t.end();
   });
 

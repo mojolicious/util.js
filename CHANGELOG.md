@@ -3,10 +3,11 @@
 
 This package strictly follows [Semantic Versioning](https://semver.org).
 
-## v1.6.0 (2022-11-21)
+## v1.6.0 (2022-11-24)
 
 ### Features
 
+  * Added `headerParams`, `headerQuote` and `headerUnquote` functions.
   * Added `removeHook` method to `AsyncHooks` class.
 
 ## v1.5.0 (2022-11-20)
