@@ -81,7 +81,7 @@ export class AsyncHooks {
    * Run hook.
    */
   async runHook(name: string, ...args: any[]): Promise<any> {
-    if (this._hooks[name] === undefined) return await Promise.resolve();
+    if (this._hooks[name] === undefined) return;
     return await this._prepareHook(this._hooks[name])(...args);
   }
 
