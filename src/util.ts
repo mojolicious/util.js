@@ -87,12 +87,9 @@ export class AsyncHooks {
 
   _prepareHook(chain: Hook[]) {
     return async function hook(...args: any[]): Promise<any> {
-      return await next(0);
-
-      async function next(i: number, result?: any): Promise<any> {
-        const fn = chain[i];
-        if (result !== undefined || fn === undefined) return result;
-        return await new Promise(resolve => resolve(fn(...args))).then(next.bind(null, i + 1));
+      for (const fn of chain) {
+        const result = await Promise.resolve(fn(...args));
+        if (result !== undefined) return result;
       }
     };
   }
