@@ -1,3 +1,4 @@
+/// <reference types="node" preserve="true" />
 // Plain JSON
 export type JSONValue = string | number | boolean | null | JSONValue[] | {[key: string]: JSONValue};
 export type JSONObject = {[key: string]: JSONValue};
@@ -150,7 +151,7 @@ function cssUnescapeReplace(value: string): string {
 export function decodeURIComponentSafe(value: string): string | null {
   try {
     return decodeURIComponent(value);
-  } catch (error) {
+  } catch {
     return null;
   }
 }

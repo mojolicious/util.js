@@ -17,7 +17,7 @@ import {
   urlSplit,
   xmlEscape,
   xmlUnescape
-} from '../lib/util.js';
+} from '../src/util.ts';
 import t from 'tap';
 
 t.test('Util', async t => {

@@ -3,6 +3,12 @@
 
 This package strictly follows [Semantic Versioning](https://semver.org).
 
+## v2.0.0 (2026-10-24)
+
+### Breaking Changes
+
+  * Removed support for Node.js versions older than 22.18.
+
 ## v1.6.0 (2022-11-24)
 
 ### Features
